@@ -1,4 +1,3 @@
-
 name: Compilar APK Android (FinaPro)
 
 on:
@@ -20,9 +19,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-size: 'large'
           node-version: 20
-          cache: 'npm'
 
       # 3. Instalar dependencias de Capacitor
       - name: Instalar dependencias
@@ -33,7 +30,7 @@ jobs:
         run: |
           if [ ! -d "www" ]; then
             mkdir www
-            echo "<h1>FinaPro temporal</h1>" > www/index.html
+            echo "<h1>FinaPro</h1>" > www/index.html
           fi
 
       # 5. Configurar Java (Requerido para compilar Android Gradle)
@@ -47,20 +44,20 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
-      # 7. Crear el proyecto de Android nativo si no está creado
+      # 7. Sincronizar plataformas ejecutando la CLI directamente con Node (Evita el Permission Denied)
       - name: Sincronizar plataformas de Capacitor
         run: |
-          npx cap sync
+          node node_modules/@capacitor/cli/bin/capacitor sync
           if [ ! -d "android" ]; then
-            npx cap add android
+            node node_modules/@capacitor/cli/bin/capacitor add android
           fi
-          npx cap sync android
+          node node_modules/@capacitor/cli/bin/capacitor sync android
 
       # 8. Otorgar permisos de ejecución al script Gradle wrapper de Android
       - name: Permisos para Gradle
         run: chmod +x android/gradlew
 
-      # 9. Compilar el archivo APK en modo Debug / Pruebas de campo
+      # 9. Compilar el archivo APK en modo Debug
       - name: Compilar APK de Android
         run: |
           cd android
@@ -73,3 +70,20 @@ jobs:
           name: FinaPro-ModaEvelyn-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
+```eof
+
+---
+
+### Pasos para subirlo desde la terminal de VSCode:
+
+Asegúrate de guardar el archivo en VSCode (`Ctrl + S`) y corre estos comandos en orden para certificar que impacten en la nube:
+
+```bash
+# 1. Forzar a Git a indexar el archivo del flujo de trabajo
+git add .github/workflows/android-build.yml
+
+# 2. Crear el commit de reparación definitiva
+git commit -m "fix: bypass de permisos usando ejecucion directa por nodo en capacitor"
+
+# 3. Subir a la rama principal
+git push origin main
