@@ -1,1 +1,1276 @@
 
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FinaPro - Moda Evelyn</title>
+    <!-- Tailwind CSS para diseño rápido y fluido -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para iconografía comercial -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para gráficos de cascada y estacionalidad -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Estilos optimizados para modo Mañanera (Feria rápida de alta visibilidad en la madrugada) */
+        .theme-dark-fair {
+            --bg-main: #0a0e17;
+            --bg-card: #141c2f;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-glow: #eab308; /* Amarillo de alta visibilidad */
+            --border-color: #374151;
+        }
+        .theme-light-standard {
+            --bg-main: #f9fafb;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --accent-glow: #6366f1; /* Índigo */
+            --border-color: #e5e7eb;
+        }
+        /* Scrollbar minimalista */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-300 flex flex-col h-screen overflow-hidden">
+
+<div id="appContainer" class="flex flex-col h-full theme-light-standard" style="background-color: var(--bg-main); color: var(--text-main);">
+    
+    <!-- HEADER -->
+    <header class="border-b px-4 py-3 flex items-center justify-between transition-colors duration-300" style="border-color: var(--border-color);">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-indigo-600 text-white rounded-lg shadow-md flex items-center justify-center">
+                <i class="fa-solid fa-scissors text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">FinaPro</h1>
+                <p class="text-xs text-green-500 font-semibold flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Moda Evelyn Bolivia
+                </p>
+            </div>
+        </div>
+        
+        <!-- Toggles de Configuración Rápida (Mañanera, Audio y Red) -->
+        <div class="flex items-center space-x-2">
+            <button id="btnVoiceControl" class="p-2.5 rounded-full transition-all border shadow-sm flex items-center justify-center" style="border-color: var(--border-color);" onclick="toggleVoiceControl()" title="Comandos por Voz">
+                <i class="fa-solid fa-microphone-slash text-gray-400" id="voiceIcon"></i>
+            </button>
+            <button id="btnThemeToggle" class="p-2.5 rounded-full transition-all border shadow-sm flex items-center justify-center" style="border-color: var(--border-color);" onclick="toggleFairTheme()" title="Modo Feria Mañanera">
+                <i class="fa-solid fa-moon text-indigo-500" id="themeIcon"></i>
+            </button>
+            <div id="syncIndicator" class="flex items-center space-x-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">
+                <i class="fa-solid fa-cloud"></i>
+                <span id="syncText">Local DB</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-4">
+        <i id="toastIcon" class="fa-solid"></i>
+        <span id="toastMessage" class="text-sm font-semibold"></span>
+    </div>
+
+    <!-- MAIN INTERACTIVE WORKSPACE -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-6">
+
+        <!-- DASHBOARD TAB -->
+        <section id="section-dashboard" class="tab-content space-y-6">
+            <!-- KPIs Financieros Básicos -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="p-4 rounded-2xl border transition-all shadow-sm" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted);">Caja Excedente</p>
+                    <p class="text-2xl font-bold mt-1 text-green-600" id="kpi-caja">0.00 Bs</p>
+                    <span class="text-[10px] text-gray-400 block mt-1">Saldo líquido disponible</span>
+                </div>
+                <div class="p-4 rounded-2xl border transition-all shadow-sm" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted);">Materia Prima</p>
+                    <p class="text-2xl font-bold mt-1 text-amber-500" id="kpi-rollos">0 Rollos</p>
+                    <span class="text-[10px] text-gray-400 block mt-1" id="kpi-metros-tela">0.00 metros en stock</span>
+                </div>
+                <div class="p-4 rounded-2xl border transition-all shadow-sm" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted);">OPEX Mensual</p>
+                    <p class="text-2xl font-bold mt-1 text-red-500">5,170.00 Bs</p>
+                    <span class="text-[10px] text-gray-400 block mt-1" id="kpi-opex-progreso">Préstamos & Alquileres</span>
+                </div>
+                <div class="p-4 rounded-2xl border transition-all shadow-sm" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted);">Egresos Familia</p>
+                    <p class="text-2xl font-bold mt-1 text-purple-500" id="kpi-familiar">0.00 Bs</p>
+                    <span class="text-[10px] text-gray-400 block mt-1">Sustento socios directo</span>
+                </div>
+            </div>
+
+            <!-- Gráficos de Cascade de Fondos & Curva Estacional -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Flujo en Cascada -->
+                <div class="p-5 rounded-2xl border shadow-sm transition-all flex flex-col justify-between" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div>
+                        <h3 class="font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-water-ladder text-indigo-500"></i> Cascada de Pago de Excedentes
+                        </h3>
+                        <p class="text-xs mt-1" style="color: var(--text-muted);">FinaPro distribuye los ingresos de la feria de forma automática según prioridades.</p>
+                    </div>
+                    <div class="my-6 space-y-3">
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>1. Costos de Producción (CUP Lotes)</span>
+                                <span id="cascade-production-pct">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="cascade-production-bar" class="bg-indigo-600 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>2. Gastos Operativos Obligatorios (5,170 Bs/mes)</span>
+                                <span id="cascade-opex-pct">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="cascade-opex-bar" class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-medium mb-1">
+                                <span>3. Egreso Familiar Integrado</span>
+                                <span id="cascade-family-pct">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="cascade-family-bar" class="bg-purple-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400 border-t pt-3" style="border-color: var(--border-color);">
+                        El balance de excedentes líquidos de caja se capitalizará para reinversión textil automática.
+                    </div>
+                </div>
+
+                <!-- Simulación Estacional -->
+                <div class="p-5 rounded-2xl border shadow-sm transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-amber-500"></i> Ciclo de Demanda Textil de Bolivia
+                        </h3>
+                        <select id="seasonMonth" class="text-xs bg-gray-100 border rounded-lg px-2 py-1 focus:ring-1 focus:ring-indigo-500 text-black font-semibold" onchange="calculateSeasonality()">
+                            <option value="1">Enero-Marzo (Bajo)</option>
+                            <option value="4" selected>Abril-Julio (Invierno Alto)</option>
+                            <option value="8">Agosto-Octubre (Transición)</option>
+                            <option value="11">Noviembre-Diciembre (Navidad Excelente)</option>
+                        </select>
+                    </div>
+                    <div class="relative h-44">
+                        <canvas id="seasonalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MESA DE CORTE TAB -->
+        <section id="section-corte" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Formulario de Corte (Capa de Dominio Matemático) -->
+                <div class="lg:col-span-2 p-5 rounded-2xl border shadow-sm space-y-5 transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div class="flex justify-between items-center pb-2 border-b" style="border-color: var(--border-color);">
+                        <h3 class="font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-compress text-indigo-500"></i> Optimización de Tizada en Mesa de Corte
+                        </h3>
+                        <span class="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-semibold">Capa de Dominio</span>
+                    </div>
+
+                    <!-- Voice commands feedback box -->
+                    <div id="voiceFeedback" class="hidden p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs rounded-xl flex items-center space-x-2 animate-pulse">
+                        <i class="fa-solid fa-ear-listen"></i>
+                        <span>Escuchando comando de corte. Di por ejemplo: "Largo dos punto cuatro, colores doce, modelos tres..."</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Sliders y Campos Directos -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Largo del trazo ($L_{corte}$) - Metros</label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="range" id="input_l_corte" min="2.2" max="2.6" step="0.1" value="2.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" oninput="updateCuttingMath()">
+                                    <span class="text-sm font-bold w-12 text-center" id="lbl_l_corte">2.5m</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Modelos en tizada ($N_{modelos}$)</label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="range" id="input_n_modelos" min="2" max="5" step="1" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" oninput="updateCuttingMath()">
+                                    <span class="text-sm font-bold w-12 text-center" id="lbl_n_modelos">3</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Rendimiento por modelo y color ($R_{color}$)</label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="range" id="input_r_color" min="2" max="15" step="1" value="6" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" oninput="updateCuttingMath()">
+                                    <span class="text-sm font-bold w-12 text-center" id="lbl_r_color">6</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Capas encimadas / colores ($C_{total}$)</label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="range" id="input_c_total" min="1" max="24" step="1" value="12" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" oninput="updateCuttingMath()">
+                                    <span class="text-sm font-bold w-12 text-center" id="lbl_c_total">12</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Precio adquisición tela ($P_{tela}$) - Bs./Metro</label>
+                                <input type="number" id="input_p_tela" value="18" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-1 focus:ring-indigo-500 bg-transparent" oninput="updateCuttingMath()">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] font-bold block mb-0.5">Pago Tallerista ($C_{costura}$)</label>
+                                    <input type="number" id="input_c_costura" value="3.5" class="w-full px-2 py-1.5 border rounded-lg text-xs bg-transparent" oninput="updateCuttingMath()">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold block mb-0.5">Gastos varios ($C_{varios}$)</label>
+                                    <input type="number" id="input_c_varios" value="1.5" class="w-full px-2 py-1.5 border rounded-lg text-xs bg-transparent" oninput="updateCuttingMath()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración Adicional de Adornos -->
+                    <div class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-dashed flex flex-col md:flex-row items-center justify-between gap-4" style="border-color: var(--border-color);">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 bg-yellow-100 text-yellow-700 rounded-lg">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold">Costo Adorno / Aplique ($C_{adorno}$)</p>
+                                <p class="text-[10px] text-gray-400">Paquete de 50 brillos valorado en Bs. 450 en feria.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-200 transition" onclick="setAdornmentCost(9.0)">Completo (9.0 Bs)</button>
+                            <button class="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition" onclick="setAdornmentCost(4.5)">Mitad (4.5 Bs)</button>
+                            <input type="number" id="input_c_adorno" value="9.0" class="w-20 px-2 py-1.5 border rounded-lg text-xs text-center bg-transparent" oninput="updateCuttingMath()">
+                        </div>
+                    </div>
+
+                    <!-- Botón de Ejecutar y Guardar Lote -->
+                    <div class="flex justify-end pt-2">
+                        <button class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-2" onclick="saveProductionLot()">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Guardar como Lote de Producción</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultados del Cálculo de Costos (COGS) -->
+                <div class="p-5 rounded-2xl border shadow-sm space-y-6 transition-all flex flex-col justify-between" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div>
+                        <h3 class="font-bold text-base flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-coins text-green-500"></i> Desglose Financiero (COGS)
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl">
+                                <div>
+                                    <span class="text-xs block text-gray-400">Rendimiento Total</span>
+                                    <span class="font-semibold text-xs" style="color: var(--text-main);">Lote de Corte ($T_{prendas}$)</span>
+                                </div>
+                                <span class="text-xl font-bold text-indigo-600" id="res_total_prendas">216 pzas</span>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-400">Costo Tela Unitario (+1% Merma)</span>
+                                    <span class="font-bold" id="res_cu_tela">2.53 Bs</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-400">Pago Tallerista</span>
+                                    <span class="font-bold" id="res_cu_costura">3.50 Bs</span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-gray-400">Consumos Secundarios</span>
+                                    <span class="font-bold" id="res_cu_varios">1.50 Bs</span>
+                                </div>
+                                <div class="flex justify-between text-xs pb-2 border-b" style="border-color: var(--border-color);">
+                                    <span class="text-gray-400">Detalles y Adorno</span>
+                                    <span class="font-bold" id="res_cu_adorno">9.00 Bs</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2">
+                                    <span class="text-sm font-bold">CUP Total Unitario</span>
+                                    <span class="text-xl font-extrabold text-green-500" id="res_cup">16.53 Bs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Precios sugeridos de venta basados en el CUP -->
+                    <div class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl space-y-3">
+                        <p class="text-xs font-bold border-b pb-1.5" style="border-color: var(--border-color);">Matriz de Precios (Pricing)</p>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-lg border" style="border-color: var(--border-color);">
+                                <p class="text-[10px] text-gray-400">Docena (30%)</p>
+                                <p class="text-xs font-bold text-indigo-600" id="price_mayor">21.5 Bs</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-lg border" style="border-color: var(--border-color);">
+                                <p class="text-[10px] text-gray-400">Cuarta (+15%)</p>
+                                <p class="text-xs font-bold text-amber-500" id="price_cuarta">24.7 Bs</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-2 rounded-lg border" style="border-color: var(--border-color);">
+                                <p class="text-[10px] text-gray-400">Unidad (+30%)</p>
+                                <p class="text-xs font-bold text-red-500" id="price_unidad">27.9 Bs</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de historial de lotes -->
+            <div class="p-5 rounded-2xl border shadow-sm transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-500"></i> Lotes de Producción Registrados (Talleristas)
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b text-xs font-bold text-gray-400" style="border-color: var(--border-color);">
+                                <th class="pb-3">Código Lote</th>
+                                <th class="pb-3">Largo</th>
+                                <th class="pb-3">Rendimiento (Prendas)</th>
+                                <th class="pb-3">CUP</th>
+                                <th class="pb-3">Talleristas</th>
+                                <th class="pb-3">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblLotes" class="text-xs divide-y" style="border-color: var(--border-color);">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- REGISTRO RAPIDO FERIA (UXI) TAB -->
+        <section id="section-feria" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Teclado Numérico de Feria Rápida (Alto contraste y botones de Docenas) -->
+                <div class="lg:col-span-7 p-5 rounded-2xl border shadow-md space-y-4 transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div class="flex justify-between items-center border-b pb-2" style="border-color: var(--border-color);">
+                        <div>
+                            <h3 class="font-bold text-base flex items-center gap-2">
+                                <i class="fa-solid fa-keyboard text-amber-500"></i> Teclado Táctil de Feria Mañanera
+                            </h3>
+                            <p class="text-[10px]" style="color: var(--text-muted);">Diseñado para evitar errores de captura a las 5:00 AM</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] rounded-full font-bold">Resiliente</span>
+                    </div>
+
+                    <!-- Panel de Visualización del Registro -->
+                    <div class="p-4 bg-gray-100 dark:bg-gray-900 rounded-xl flex justify-between items-center">
+                        <div>
+                            <span class="text-xs text-gray-400 block font-medium">Predicción: Docenas Surtidas (11 Variados + 1 Negro)</span>
+                            <span class="text-2xl font-black text-indigo-600" id="fairInputValue">1 Docena</span>
+                        </div>
+                        <button class="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold" onclick="clearFairInput()">Borrar</button>
+                    </div>
+
+                    <!-- Teclado -->
+                    <div class="grid grid-cols-4 gap-3">
+                        <!-- Valores Directos -->
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(1)">1</button>
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(2)">2</button>
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(3)">3</button>
+                        <button class="p-5 bg-indigo-600 text-white rounded-xl text-xs font-extrabold hover:scale-95 transition flex flex-col items-center justify-center" onclick="addDozensDirect(1)">
+                            <span>+1 DOC</span>
+                            <span class="text-[9px] opacity-75">12 pzas</span>
+                        </button>
+
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(4)">4</button>
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(5)">5</button>
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(6)">6</button>
+                        <button class="p-5 bg-indigo-700 text-white rounded-xl text-xs font-extrabold hover:scale-95 transition flex flex-col items-center justify-center" onclick="addDozensDirect(5)">
+                            <span>+5 DOC</span>
+                            <span class="text-[9px] opacity-75">60 pzas</span>
+                        </button>
+
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(7)">7</button>
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(8)">8</button>
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(9)">9</button>
+                        <button class="p-5 bg-indigo-800 text-white rounded-xl text-xs font-extrabold hover:scale-95 transition flex flex-col items-center justify-center" onclick="addDozensDirect(10)">
+                            <span>+10 DOC</span>
+                            <span class="text-[9px] opacity-75">120 pzas</span>
+                        </button>
+
+                        <button class="p-5 bg-gray-200 dark:bg-gray-800 rounded-xl text-xl font-bold hover:scale-95 transition" onclick="appendFairValue(0)">0</button>
+                        <button class="p-5 bg-amber-500 text-white rounded-xl text-xs font-extrabold hover:scale-95 transition flex flex-col items-center justify-center" onclick="addCuartaDirect()">
+                            <span>+1/4 DOC</span>
+                            <span class="text-[9px] opacity-75">3 pzas</span>
+                        </button>
+                        <button class="p-5 bg-amber-600 text-white rounded-xl text-xs font-extrabold hover:scale-95 transition flex flex-col items-center justify-center col-span-2" onclick="setLiquidacionUnit()">
+                            <span>LIQUIDACIÓN UNITARIA</span>
+                            <span class="text-[9px] opacity-75">A precio mayorista</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Detalles de la Transacción en Feria -->
+                <div class="lg:col-span-5 p-5 rounded-2xl border shadow-md space-y-5 transition-all flex flex-col justify-between" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-base flex items-center gap-2 border-b pb-2" style="border-color: var(--border-color);">
+                            <i class="fa-solid fa-receipt text-green-500"></i> Detalle de Venta
+                        </h3>
+
+                        <!-- Segmentación del SKU (Obligatorio) -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] font-bold block mb-1">Modelo</label>
+                                <select id="fairModel" class="w-full text-xs p-2 border rounded-lg bg-transparent">
+                                    <option value="Morley Clásico">Morley Clásico</option>
+                                    <option value="Frizado Invierno">Frizado Invierno</option>
+                                    <option value="Tizada Cruzada">Tizada Cruzada</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold block mb-1">Tela</label>
+                                <select id="fairFabric" class="w-full text-xs p-2 border rounded-lg bg-transparent">
+                                    <option value="Morley Rib">Morley Rib Delgado</option>
+                                    <option value="Frisa Abrigada">Frisa Pesada</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold block mb-1">Talla</label>
+                                <select id="fairSize" class="w-full text-xs p-2 border rounded-lg bg-transparent">
+                                    <option value="S">S</option>
+                                    <option value="M" selected>M</option>
+                                    <option value="L">L</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold block mb-1">Detalle</label>
+                                <select id="fairDetail" class="w-full text-xs p-2 border rounded-lg bg-transparent">
+                                    <option value="Con Brillo">Con Brillo</option>
+                                    <option value="Liso">Liso Clásico</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Canal de Venta -->
+                        <div>
+                            <label class="text-xs font-semibold block mb-1">Canal de Venta</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button id="btnChannel1" class="p-2 border rounded-lg text-xs font-semibold flex flex-col items-center justify-center bg-indigo-50 border-indigo-500 text-indigo-700" onclick="setSalesChannel(1)">
+                                    <i class="fa-solid fa-store mb-1"></i>
+                                    <span>T. Central</span>
+                                </button>
+                                <button id="btnChannel2" class="p-2 border rounded-lg text-xs font-semibold flex flex-col items-center justify-center" onclick="setSalesChannel(2)">
+                                    <i class="fa-solid fa-cloud-sun mb-1"></i>
+                                    <span>Mañanera</span>
+                                </button>
+                                <button id="btnChannel3" class="p-2 border rounded-lg text-xs font-semibold flex flex-col items-center justify-center" onclick="setSalesChannel(3)">
+                                    <i class="fa-brands fa-whatsapp mb-1 text-green-500"></i>
+                                    <span>WhatsApp</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Detalle Financiero del cobro -->
+                        <div class="p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-xl space-y-2">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-400">Total Prendas:</span>
+                                <span class="font-bold" id="fairSummaryQty">12 unidades</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-400">Tipo de Precio:</span>
+                                <span class="font-bold text-indigo-600" id="fairSummaryPriceType">Mayorista (30%)</span>
+                            </div>
+                            <div class="flex justify-between text-sm pt-2 border-t" style="border-color: var(--border-color);">
+                                <span class="font-bold">Monto Total a Cobrar:</span>
+                                <span class="font-black text-xl text-green-500" id="fairSummaryTotal">258.00 Bs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Confirmación -->
+                    <button class="w-full py-4 bg-green-500 hover:bg-green-600 text-white font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2" onclick="processFairSale()">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>CONSOLIDAR VENTA EN CASCO</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- INVENTARIO TAB -->
+        <section id="section-inventario" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Abastecimiento de Materia Prima -->
+                <div class="p-5 rounded-2xl border shadow-sm space-y-4 transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <h3 class="font-bold text-base flex items-center gap-2 border-b pb-2" style="border-color: var(--border-color);">
+                        <i class="fa-solid fa-truck-ramp-box text-indigo-500"></i> Adquisición de Lote de Rollos
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold block mb-1">Cantidad de Rollos</label>
+                            <input type="number" id="rollQty" value="12" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-1 focus:ring-indigo-500 bg-transparent">
+                            <span class="text-[10px] text-gray-400">Lote recomendado: 12 a 14 rollos surtidos</span>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold block mb-1">Metros por Rollo (Promedio)</label>
+                            <input type="number" id="rollMeters" value="80" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-1 focus:ring-indigo-500 bg-transparent">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold block mb-1">Material Base</label>
+                            <select id="rollMaterial" class="w-full text-xs p-2 border rounded-lg bg-transparent">
+                                <option value="Morley Rib">Morley Rib Delgado (Core)</option>
+                                <option value="Frizado">Frizado Invierno (Temporada)</option>
+                            </select>
+                        </div>
+                        <button class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition" onclick="buyRollBatch()">
+                            Registrar Ingreso de Rollos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stack Visual de Rollos en Almacén -->
+                <div class="lg:col-span-2 p-5 rounded-2xl border shadow-sm transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-warehouse text-amber-500"></i> Almacén de Rollos Activos
+                        </h3>
+                        <span id="lowStockAlert" class="hidden text-[10px] bg-red-100 text-red-700 font-extrabold px-2 py-1 rounded-full animate-pulse">¡REINVERSIÓN NECESARIA! MENOS DE 12 ROLLOS</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="rollWarehouseContainer">
+                        <!-- Dinámico con indicador de rollos -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINANZAS TAB -->
+        <section id="section-finanzas" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- OPEX Mensual Fijo Obligatorio -->
+                <div class="p-5 rounded-2xl border shadow-sm transition-all" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-building-columns text-indigo-500"></i> Gastos Fijos Operativos (OPEX: 5,170 Bs.)
+                    </h3>
+                    <div class="space-y-3" id="opexListContainer">
+                        <!-- Estructura de costos fijos obligatorios -->
+                    </div>
+                </div>
+
+                <!-- Finanzas Familiares y Gastos del Taller Combinados -->
+                <div class="p-5 rounded-2xl border shadow-sm transition-all flex flex-col justify-between" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                    <div>
+                        <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-house-chimney-window text-purple-500"></i> Registro de Egresos Familiares
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Monto (Bs.)</label>
+                                <input type="number" id="familyExpenseAmount" class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-1 focus:ring-indigo-500 bg-transparent">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold block mb-1">Categoría</label>
+                                <select id="familyExpenseCategory" class="w-full text-xs p-2 border rounded-lg bg-transparent">
+                                    <option value="Alimentación">Alimentación Diaria</option>
+                                    <option value="Salud">Salud / Medicamentos</option>
+                                    <option value="Educación">Educación / Colegio</option>
+                                    <option value="Varios">Gastos Varios Hogar</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow transition" onclick="addFamilyExpense()">
+                            Registrar Gasto Familiar
+                        </button>
+                    </div>
+
+                    <div class="mt-6 border-t pt-4" style="border-color: var(--border-color);">
+                        <p class="text-xs font-semibold mb-2">Gastos Familiares Recientes</p>
+                        <div class="max-h-36 overflow-y-auto divide-y" id="familyExpensesHistory" style="border-color: var(--border-color);">
+                            <!-- Historial de retiros familiares -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER NAVIGATION MENU -->
+    <nav class="border-t py-2 px-3 flex justify-around transition-colors duration-300" style="background-color: var(--bg-card); border-color: var(--border-color);">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center space-y-1 text-indigo-600 font-bold transition">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span class="text-[10px]">Dashboard</span>
+        </button>
+        <button onclick="switchTab('corte')" id="nav-corte" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-indigo-600 transition">
+            <i class="fa-solid fa-scissors text-lg"></i>
+            <span class="text-[10px]">Mesa Corte</span>
+        </button>
+        <button onclick="switchTab('feria')" id="nav-feria" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-indigo-600 transition">
+            <i class="fa-solid fa-cash-register text-lg"></i>
+            <span class="text-[10px]">Feria (UXI)</span>
+        </button>
+        <button onclick="switchTab('inventario')" id="nav-inventario" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-indigo-600 transition">
+            <i class="fa-solid fa-warehouse text-lg"></i>
+            <span class="text-[10px]">Inventario</span>
+        </button>
+        <button onclick="switchTab('finanzas')" id="nav-finanzas" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-indigo-600 transition">
+            <i class="fa-solid fa-coins text-lg"></i>
+            <span class="text-[10px]">Finanzas</span>
+        </button>
+    </nav>
+</div>
+
+<!-- CAPAS DE COMPORTAMIENTO DE CLIENTE EN JAVASCRIPT -->
+<script>
+    // Variables de Estado de la Aplicación
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'finapro-evelyn';
+    let appState = {
+        cash_balance: 10500.00, // Capital de trabajo inicial
+        total_rolls: 14,
+        total_meters: 1120.00,
+        opex_paid: 0.00,
+        family_expenses: 0.00,
+        current_cup: 16.53,
+        active_channel: 1, // Tienda Central por default
+        voice_active: false,
+        dark_fair_theme: false,
+        production_lots: [],
+        roll_warehouse: [],
+        family_history: []
+    };
+
+    // Estructura mensual obligatoria (OPEX total 5,170 Bs.)
+    const opexStructure = [
+        { name: "Alquiler Tienda Central (Miércoles/Sábados)", amount: 1000 },
+        { name: "Alquiler Venta Madrugadora (Mañanera)", amount: 100 },
+        { name: "Alquiler Vivienda / Casa Taller", amount: 1800 },
+        { name: "Luz Combinada (Taller y Hogar)", amount: 200 },
+        { name: "Agua Combinada (Taller y Hogar)", amount: 70 },
+        { name: "Internet Banda Ancha", amount: 300 },
+        { name: "Cuota de Préstamo Bancario Activo", amount: 1700 }
+    ];
+
+    // Inicializar Datos al Cargar Página
+    window.onload = function() {
+        // Cargar datos locales de simulación offline
+        loadLocalDatabase();
+        updateCuttingMath();
+        renderOpexList();
+        renderRollWarehouse();
+        renderFamilyExpenses();
+        renderLotesTable();
+        calculateSeasonality();
+        updateKPIs();
+        showNotification("FinaPro activo. Sistema offline-first listo.", "success");
+    };
+
+    // Mesa de Corte (Capa de Dominio)
+    function updateCuttingMath() {
+        const l_corte = parseFloat(document.getElementById("input_l_corte").value);
+        const n_modelos = parseInt(document.getElementById("input_n_modelos").value);
+        const r_color = parseInt(document.getElementById("input_r_color").value);
+        const c_total = parseInt(document.getElementById("input_c_total").value);
+        const p_tela = parseFloat(document.getElementById("input_p_tela").value);
+        
+        const c_costura = parseFloat(document.getElementById("input_c_costura").value);
+        const c_varios = parseFloat(document.getElementById("input_c_varios").value);
+        const c_adorno = parseFloat(document.getElementById("input_c_adorno").value);
+
+        // Actualizar Etiquetas de sliders
+        document.getElementById("lbl_l_corte").innerText = l_corte.toFixed(1) + "m";
+        document.getElementById("lbl_n_modelos").innerText = n_modelos;
+        document.getElementById("lbl_r_color").innerText = r_color;
+        document.getElementById("lbl_c_total").innerText = c_total;
+
+        // Fórmula 1: Rendimiento Total del Lote ($T_{prendas}$)
+        const total_prendas = n_modelos * r_color * c_total;
+
+        // Fórmula 2: Costo Unitario de Tela con Factor de Merma ($CU_{tela}$)
+        const total_metros_usados = l_corte * c_total;
+        const cu_tela = ((total_metros_usados * p_tela) / total_prendas) * 1.01;
+
+        // Fórmula 3: Costo Unitario de Producción ($CUP$)
+        const cup = cu_tela + c_costura + c_varios + c_adorno;
+
+        // Actualizar Vista de Resultados
+        document.getElementById("res_total_prendas").innerText = total_prendas + " pzas";
+        document.getElementById("res_cu_tela").innerText = cu_tela.toFixed(2) + " Bs";
+        document.getElementById("res_cu_costura").innerText = c_costura.toFixed(2) + " Bs";
+        document.getElementById("res_cu_varios").innerText = c_varios.toFixed(2) + " Bs";
+        document.getElementById("res_cu_adorno").innerText = c_adorno.toFixed(2) + " Bs";
+        document.getElementById("res_cup").innerText = cup.toFixed(2) + " Bs";
+
+        // Actualizar Matriz de Precios
+        const price_mayor = cup * 1.30;
+        const price_cuarta = price_mayor * 1.15;
+        const price_unidad = price_mayor * 1.30;
+
+        document.getElementById("price_mayor").innerText = price_mayor.toFixed(1) + " Bs";
+        document.getElementById("price_cuarta").innerText = price_cuarta.toFixed(1) + " Bs";
+        document.getElementById("price_unidad").innerText = price_unidad.toFixed(1) + " Bs";
+
+        appState.current_cup = cup;
+        calculateFairSalePrice();
+    }
+
+    // Configurar adorno de forma rápida
+    function setAdornmentCost(val) {
+        document.getElementById("input_c_adorno").value = val;
+        updateCuttingMath();
+    }
+
+    // Guardar Lote de Producción de forma local
+    function saveProductionLot() {
+        const l_corte = parseFloat(document.getElementById("input_l_corte").value);
+        const c_total = parseInt(document.getElementById("input_c_total").value);
+        const total_prendas = parseInt(document.getElementById("res_total_prendas").innerText);
+        const total_metros_usados = l_corte * c_total;
+
+        if (appState.total_meters < total_metros_usados) {
+            showNotification("Stock de tela insuficiente. Adquiera más rollos.", "error");
+            return;
+        }
+
+        // Descontar tela de almacén
+        appState.total_meters -= total_metros_usados;
+        appState.total_rolls = Math.ceil(appState.total_meters / 80);
+
+        const nuevoLote = {
+            id: "LOTE-" + (appState.production_lots.length + 1001),
+            l_corte: l_corte,
+            prendas: total_prendas,
+            cup: appState.current_cup,
+            talleristas: appState.production_lots.length % 2 === 0 ? "Escala Normal (1 Tallerista)" : "Alta Demanda (2 Talleristas)",
+            fecha: new Date().toLocaleDateString()
+        };
+
+        appState.production_lots.unshift(nuevoLote);
+        saveLocalDatabase();
+        renderLotesTable();
+        updateKPIs();
+        showNotification("Lote de Producción registrado correctamente.", "success");
+    }
+
+    // Teclado Numérico de Feria e Interfaz de Transacción
+    let currentFairValue = 1; // Unidades por default (Docenas)
+    let isCuarta = false;
+    let isLiquidacion = false;
+
+    function appendFairValue(num) {
+        currentFairValue = parseInt(currentFairValue.toString() + num.toString());
+        isCuarta = false;
+        isLiquidacion = false;
+        updateFairUI();
+    }
+
+    function addDozensDirect(num) {
+        currentFairValue = num;
+        isCuarta = false;
+        isLiquidacion = false;
+        updateFairUI();
+    }
+
+    function addCuartaDirect() {
+        currentFairValue = 3; // Cuarta parte de una docena de venta estándar
+        isCuarta = true;
+        isLiquidacion = false;
+        updateFairUI();
+    }
+
+    function setLiquidacionUnit() {
+        currentFairValue = 1;
+        isCuarta = false;
+        isLiquidacion = true;
+        updateFairUI();
+    }
+
+    function clearFairInput() {
+        currentFairValue = 1;
+        isCuarta = false;
+        isLiquidacion = false;
+        updateFairUI();
+    }
+
+    function updateFairUI() {
+        let text = "";
+        if (isCuarta) {
+            text = "1 Cuarta (3 pzas)";
+        } else if (isLiquidacion) {
+            text = currentFairValue + " Prenda(s) Liquidación";
+        } else {
+            text = currentFairValue + " Docena(s)";
+        }
+        document.getElementById("fairInputValue").innerText = text;
+        calculateFairSalePrice();
+    }
+
+    function calculateFairSalePrice() {
+        const cup = appState.current_cup;
+        const price_mayor = cup * 1.30;
+        const price_cuarta = price_mayor * 1.15;
+        const price_unidad = price_mayor * 1.30;
+
+        let total_prendas = 0;
+        let total_cobro = 0;
+        let pType = "";
+
+        if (isCuarta) {
+            total_prendas = 3;
+            total_cobro = price_cuarta * total_prendas;
+            pType = "Cuarta (Mesa Feria)";
+        } else if (isLiquidacion) {
+            total_prendas = currentFairValue;
+            // Estrategia de saldos: Liquidación unitaria a costo plano mayorista
+            total_cobro = price_mayor * total_prendas;
+            pType = "Liquidación Unitaria";
+        } else {
+            // Venta de docena completa
+            total_prendas = currentFairValue * 12;
+            total_cobro = price_mayor * total_prendas;
+            pType = "Mayorista x Docena (11+1 Negro)";
+        }
+
+        // Mostrar Resumen
+        document.getElementById("fairSummaryQty").innerText = total_prendas + " unidades";
+        document.getElementById("fairSummaryPriceType").innerText = pType;
+        document.getElementById("fairSummaryTotal").innerText = total_cobro.toFixed(2) + " Bs";
+    }
+
+    // Consolidar Venta
+    function processFairSale() {
+        const total_prendas = parseInt(document.getElementById("fairSummaryQty").innerText);
+        const total_cobro = parseFloat(document.getElementById("fairSummaryTotal").innerText);
+
+        if (total_cobro <= 0) return;
+
+        // Feedback de Vibración Móvil si es compatible
+        if (navigator.vibrate) {
+            navigator.vibrate([100]);
+        }
+
+        // Sumar a la caja del negocio
+        appState.cash_balance += total_cobro;
+        
+        saveLocalDatabase();
+        updateKPIs();
+        showNotification(`Venta consolidada: +${total_cobro.toFixed(2)} Bs`, "success");
+        clearFairInput();
+    }
+
+    // Configurar canal de venta para costos
+    function setSalesChannel(channelId) {
+        appState.active_channel = channelId;
+        for (let i = 1; i <= 3; i++) {
+            const btn = document.getElementById(`btnChannel${i}`);
+            btn.className = "p-2 border rounded-lg text-xs font-semibold flex flex-col items-center justify-center transition";
+            if (i === channelId) {
+                btn.classList.add("bg-indigo-50", "border-indigo-500", "text-indigo-700");
+            }
+        }
+    }
+
+    // Módulo de Inventario de Rollos
+    function buyRollBatch() {
+        const qty = parseInt(document.getElementById("rollQty").value);
+        const meters = parseFloat(document.getElementById("rollMeters").value);
+        const mat = document.getElementById("rollMaterial").value;
+
+        const costoLote = qty * meters * 0.15 * 18; // Costo estimado de reinversión
+        if (appState.cash_balance < costoLote) {
+            showNotification("Saldo en caja insuficiente para adquisición de rollos.", "error");
+            return;
+        }
+
+        appState.cash_balance -= costoLote;
+        appState.total_rolls += qty;
+        appState.total_meters += (qty * meters);
+
+        // Añadir lote visual a bodega
+        appState.roll_warehouse.unshift({
+            id: "R-" + (appState.roll_warehouse.length + 101),
+            material: mat,
+            metros: meters,
+            status: "Sellado"
+        });
+
+        saveLocalDatabase();
+        renderRollWarehouse();
+        updateKPIs();
+        showNotification(`Compra de ${qty} rollos registrada. Tela agregada.`, "success");
+    }
+
+    function renderRollWarehouse() {
+        const container = document.getElementById("rollWarehouseContainer");
+        container.innerHTML = "";
+
+        // Si la lista local está vacía, llenar por defecto
+        if (appState.roll_warehouse.length === 0) {
+            for (let i = 0; i < appState.total_rolls; i++) {
+                appState.roll_warehouse.push({
+                    id: "R-" + (100 + i),
+                    material: i % 3 === 0 ? "Frizado" : "Morley Rib",
+                    metros: 80,
+                    status: "Sellado"
+                });
+            }
+        }
+
+        appState.roll_warehouse.forEach(r => {
+            const isMorley = r.material.includes("Morley");
+            const div = document.createElement("div");
+            div.className = "p-3 border rounded-xl flex flex-col justify-between items-center text-center transition shadow-sm";
+            div.style.backgroundColor = "var(--bg-card)";
+            div.style.borderColor = "var(--border-color)";
+            div.innerHTML = `
+                <div class="p-2 ${isMorley ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'} rounded-lg text-lg">
+                    <i class="fa-solid fa-scroll"></i>
+                </div>
+                <p class="text-xs font-bold mt-2">${r.material}</p>
+                <p class="text-[10px] text-gray-400 mt-1">${r.metros} Metros</p>
+                <span class="mt-2 px-2 py-0.5 bg-green-50 text-green-700 text-[8px] font-bold rounded-full">${r.status}</span>
+            `;
+            container.appendChild(div);
+        });
+
+        // Alerta de reinversión automática
+        const alertBox = document.getElementById("lowStockAlert");
+        if (appState.total_rolls < 12) {
+            alertBox.classList.remove("hidden");
+        } else {
+            alertBox.classList.add("hidden");
+        }
+    }
+
+    // Gastos Familiares & OPEX
+    function renderOpexList() {
+        const container = document.getElementById("opexListContainer");
+        container.innerHTML = "";
+
+        opexStructure.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "flex justify-between items-center p-3 border rounded-xl bg-transparent transition";
+            div.style.borderColor = "var(--border-color)";
+            div.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    <p class="text-xs font-semibold">${item.name}</p>
+                </div>
+                <span class="text-xs font-bold">${item.amount} Bs</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Registrar retiro familiar en cascada
+    function addFamilyExpense() {
+        const amt = parseFloat(document.getElementById("familyExpenseAmount").value);
+        const cat = document.getElementById("familyExpenseCategory").value;
+
+        if (isNaN(amt) || amt <= 0) return;
+
+        if (appState.cash_balance < amt) {
+            showNotification("Alerta: Retiro familiar excede saldo disponible en caja.", "error");
+            return;
+        }
+
+        appState.cash_balance -= amt;
+        appState.family_expenses += amt;
+
+        appState.family_history.unshift({
+            cat: cat,
+            amount: amt,
+            fecha: new Date().toLocaleTimeString()
+        });
+
+        document.getElementById("familyExpenseAmount").value = "";
+        saveLocalDatabase();
+        renderFamilyExpenses();
+        updateKPIs();
+        showNotification("Gasto familiar registrado en cascada.", "success");
+    }
+
+    function renderFamilyExpenses() {
+        const container = document.getElementById("familyExpensesHistory");
+        container.innerHTML = "";
+
+        if (appState.family_history.length === 0) {
+            container.innerHTML = `<p class="text-[10px] text-gray-400 py-3 text-center">No hay retiros registrados hoy</p>`;
+            return;
+        }
+
+        appState.family_history.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "flex justify-between items-center py-2 text-[11px]";
+            div.innerHTML = `
+                <span class="font-medium text-purple-600">${item.cat}</span>
+                <div class="space-x-2">
+                    <span class="text-gray-400">${item.fecha}</span>
+                    <span class="font-bold text-red-500">${item.amount.toFixed(2)} Bs</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Actualización de KPIs Globales y Cascada de Pagos
+    function updateKPIs() {
+        document.getElementById("kpi-caja").innerText = appState.cash_balance.toFixed(2) + " Bs";
+        document.getElementById("kpi-rollos").innerText = appState.total_rolls + " Rollos";
+        document.getElementById("kpi-metros-tela").innerText = appState.total_meters.toFixed(1) + " metros en stock";
+        document.getElementById("kpi-familiar").innerText = appState.family_expenses.toFixed(2) + " Bs";
+
+        // Actualizar barra de cascada financiera
+        const totalCajaOriginal = appState.cash_balance + appState.family_expenses;
+        
+        let prodPct = 0;
+        let opexPct = 0;
+        let famPct = 0;
+
+        if (totalCajaOriginal > 0) {
+            prodPct = Math.min(100, (4000 / totalCajaOriginal) * 100); // 4,000 Bs estimación base producción
+            opexPct = Math.min(100, (5170 / totalCajaOriginal) * 100);
+            famPct = Math.min(100, (appState.family_expenses / totalCajaOriginal) * 100);
+        }
+
+        document.getElementById("cascade-production-bar").style.width = prodPct + "%";
+        document.getElementById("cascade-production-pct").innerText = prodPct.toFixed(0) + "%";
+
+        document.getElementById("cascade-opex-bar").style.width = opexPct + "%";
+        document.getElementById("cascade-opex-pct").innerText = opexPct.toFixed(0) + "%";
+
+        document.getElementById("cascade-family-bar").style.width = famPct + "%";
+        document.getElementById("cascade-family-pct").innerText = famPct.toFixed(0) + "%";
+    }
+
+    // Gráfico de Estacionalidad de Bolivia
+    let chartInstance = null;
+    function calculateSeasonality() {
+        const month = parseInt(document.getElementById("seasonMonth").value);
+        let demandFactor = 1.0;
+
+        if (month >= 1 && month <= 3) demandFactor = 0.6; // Bajo
+        else if (month >= 4 && month <= 7) demandFactor = 1.5; // Invierno Alto
+        else if (month >= 8 && month <= 10) demandFactor = 0.9; // Transición
+        else demandFactor = 1.8; // Navidad Excelente
+
+        const ctx = document.getElementById('seasonalChart').getContext('2d');
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Ene-Mar', 'Abr-Jul', 'Ago-Oct', 'Nov-Dic'],
+                datasets: [{
+                    label: 'Multiplicador de Ventas',
+                    data: [0.6, 1.5, 0.9, 1.8],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(128,128,128,0.1)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // Renderizar Lotes
+    function renderLotesTable() {
+        const container = document.getElementById("tblLotes");
+        container.innerHTML = "";
+
+        if (appState.production_lots.length === 0) {
+            container.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Ningún lote registrado para corte.</td></tr>`;
+            return;
+        }
+
+        appState.production_lots.forEach(l => {
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-gray-50 dark:hover:bg-gray-900 transition";
+            tr.innerHTML = `
+                <td class="py-3 font-semibold text-indigo-600">${l.id}</td>
+                <td class="py-3">${l.l_corte}m</td>
+                <td class="py-3 font-bold">${l.prendas} pzas</td>
+                <td class="py-3 text-green-500 font-bold">${l.cup.toFixed(2)} Bs</td>
+                <td class="py-3">${l.talleristas}</td>
+                <td class="py-3 text-gray-400">${l.fecha}</td>
+            `;
+            container.appendChild(tr);
+        });
+    }
+
+    // Navegación de Pestañas (Tabs)
+    function switchTab(tabName) {
+        document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+        document.getElementById(`section-${tabName}`).classList.remove("hidden");
+
+        // Cambiar clases activas en navegación
+        document.querySelectorAll("nav button").forEach(btn => {
+            btn.classList.remove("text-indigo-600", "font-bold");
+            btn.classList.add("text-gray-400");
+        });
+        document.getElementById(`nav-${tabName}`).classList.add("text-indigo-600", "font-bold");
+        document.getElementById(`nav-${tabName}`).classList.remove("text-gray-400");
+    }
+
+    // Reconocimiento de Voz Inteligente (UXI Speech-to-Text)
+    let recognition;
+    function toggleVoiceControl() {
+        if (appState.voice_active) {
+            appState.voice_active = false;
+            document.getElementById("voiceIcon").className = "fa-solid fa-microphone-slash text-gray-400";
+            document.getElementById("voiceFeedback").classList.add("hidden");
+            if (recognition) recognition.stop();
+            showNotification("Reconocimiento de voz desactivado.", "info");
+        } else {
+            appState.voice_active = true;
+            document.getElementById("voiceIcon").className = "fa-solid fa-microphone text-green-500 animate-bounce";
+            document.getElementById("voiceFeedback").classList.remove("hidden");
+            initVoiceRecognition();
+        }
+    }
+
+    function initVoiceRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            showNotification("Soporte de voz no disponible en este dispositivo móvil.", "error");
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.lang = 'es-BO';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onresult = function(event) {
+            const last = event.results.length - 1;
+            const command = event.results[last][0].transcript.toLowerCase();
+            processVoiceCommand(command);
+        };
+
+        recognition.start();
+    }
+
+    function processVoiceCommand(cmd) {
+        showNotification(`Voz detectada: "${cmd}"`, "info");
+        
+        // Expresión regular para capturar comandos como "largo dos punto cinco", "colores doce", "modelos tres"
+        if (cmd.includes("largo")) {
+            const match = cmd.match(/largo\s+(\d+[\.\,]\d+|\d+)/);
+            if (match) {
+                const val = parseFloat(match[1].replace(",", "."));
+                if (val >= 2.2 && val <= 2.6) {
+                    document.getElementById("input_l_corte").value = val;
+                    updateCuttingMath();
+                }
+            }
+        }
+        if (cmd.includes("colores") || cmd.includes("capas")) {
+            const match = cmd.match(/(colores|capas)\s+(\d+)/);
+            if (match) {
+                document.getElementById("input_c_total").value = parseInt(match[2]);
+                updateCuttingMath();
+            }
+        }
+        if (cmd.includes("modelos")) {
+            const match = cmd.match(/modelos\s+(\d+)/);
+            if (match) {
+                document.getElementById("input_n_modelos").value = parseInt(match[1]);
+                updateCuttingMath();
+            }
+        }
+    }
+
+    // MODO FERIA MAÑANERA (ALTO CONTRASTE PARA 5:00 AM)
+    function toggleFairTheme() {
+        const container = document.getElementById("appContainer");
+        const icon = document.getElementById("themeIcon");
+
+        if (appState.dark_fair_theme) {
+            appState.dark_fair_theme = false;
+            container.className = "flex flex-col h-full theme-light-standard";
+            icon.className = "fa-solid fa-moon text-indigo-500";
+        } else {
+            appState.dark_fair_theme = true;
+            container.className = "flex flex-col h-full theme-dark-fair";
+            icon.className = "fa-solid fa-sun text-yellow-400";
+            showNotification("Modo Feria 5:00 AM activado (Alto Contraste)", "info");
+        }
+    }
+
+    // BASE DE DATOS LOCAL OFFLINE-FIRST (IndexedDB Emulation)
+    function saveLocalDatabase() {
+        localStorage.setItem("finapro_state", JSON.stringify(appState));
+        // Simulación de sync
+        document.getElementById("syncText").innerText = "Sincronizado";
+        document.getElementById("syncIndicator").className = "flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium";
+    }
+
+    function loadLocalDatabase() {
+        const saved = localStorage.getItem("finapro_state");
+        if (saved) {
+            appState = JSON.parse(saved);
+        }
+    }
+
+    // SISTEMA PROPIO DE TOASTS Y COMPROBACIONES
+    function showNotification(msg, type) {
+        const toast = document.getElementById("toast");
+        const icon = document.getElementById("toastIcon");
+        const message = document.getElementById("toastMessage");
+
+        message.innerText = msg;
+
+        if (type === "success") {
+            toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 bg-green-500 text-white opacity-100 scale-100 transition duration-300";
+            icon.className = "fa-solid fa-circle-check";
+        } else if (type === "error") {
+            toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 bg-red-500 text-white opacity-100 scale-100 transition duration-300";
+            icon.className = "fa-solid fa-triangle-exclamation";
+        } else {
+            toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 bg-indigo-600 text-white opacity-100 scale-100 transition duration-300";
+            icon.className = "fa-solid fa-circle-info";
+        }
+
+        setTimeout(() => {
+            toast.classList.add("opacity-0", "scale-95");
+        }, 3000);
+    }
+</script>
+</body>
+</html>
