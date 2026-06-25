@@ -1,1 +1,75 @@
 
+name: Compilar APK Android (FinaPro)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código del repositorio
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      # 2. Configurar el entorno de Node.js
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-size: 'large'
+          node-version: 20
+          cache: 'npm'
+
+      # 3. Instalar dependencias de Capacitor
+      - name: Instalar dependencias
+        run: npm install
+
+      # 4. Asegurar que la carpeta web de origen existe
+      - name: Validar carpeta web (www)
+        run: |
+          if [ ! -d "www" ]; then
+            mkdir www
+            echo "<h1>FinaPro temporal</h1>" > www/index.html
+          fi
+
+      # 5. Configurar Java (Requerido para compilar Android Gradle)
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 6. Configurar herramientas de compilación de Android
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 7. Crear el proyecto de Android nativo si no está creado
+      - name: Sincronizar plataformas de Capacitor
+        run: |
+          npx cap sync
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      # 8. Otorgar permisos de ejecución al script Gradle wrapper de Android
+      - name: Permisos para Gradle
+        run: chmod +x android/gradlew
+
+      # 9. Compilar el archivo APK en modo Debug / Pruebas de campo
+      - name: Compilar APK de Android
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      # 10. Subir el APK generado a los artefactos de GitHub para su descarga
+      - name: Subir APK Compilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinaPro-ModaEvelyn-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
