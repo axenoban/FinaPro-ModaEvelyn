@@ -1,0 +1,12 @@
+{
+  "appId": "bo.modaevelyn.finapro",
+  "appName": "FinaPro",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true
+  }
+}
