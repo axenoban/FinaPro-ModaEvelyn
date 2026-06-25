@@ -1,12 +1,27 @@
 {
-  "appId": "bo.modaevelyn.finapro",
-  "appName": "FinaPro",
-  "webDir": "www",
-  "server": {
-    "androidScheme": "https"
+  "name": "finapro-moda-evelyn",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión Financiera y Operativa Móvil - Moda Evelyn Bolivia",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Preparando entorno web...'",
+    "cap:sync": "cap sync",
+    "cap:copy": "cap copy",
+    "cap:open": "cap open android"
   },
-  "android": {
-    "allowMixedContent": true,
-    "captureInput": true
+  "keywords": [
+    "finapro",
+    "android",
+    "capacitor",
+    "offline-first"
+  ],
+  "author": "Moda Evelyn Bolivia",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
   }
 }
