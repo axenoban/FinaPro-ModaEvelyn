@@ -1,70 +1,60 @@
-name: Compilar APK Android (FinaPro)
+name: Compilar APK Android - FinaPro
 
 on:
-push:
-branches:
-- main
-pull_request:
-branches:
-- main
+  push:
+    branches:
+      - main
 
-STREAMING_CHUNK: Configurando el job de compilación...
+env:
+  CAPACITOR_TELEMETRY_DISABLED: 1  # Desactiva preguntas interactivas en el servidor
 
 jobs:
-build:
-runs-on: ubuntu-latest
+  build:
+    name: Build APK de Producción
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Descargar repositorio
-    uses: actions/checkout@v4
+    steps:
+      - name: Clonar Repositorio
+        uses: actions/checkout@v4
 
-  - name: Configurar Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-  - name: Instalar dependencias
-    run: npm install
+      - name: Configurar Entorno Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  - name: Validar carpeta web (www)
-    run: |
-      if [ ! -d "www" ]; then
-        mkdir www
-        echo "<h1>FinaPro</h1>" > www/index.html
-      fi
+      - name: Instalar Dependencias de Compilación
+        run: |
+          npm install --legacy-peer-deps
 
-  # STREAMING_CHUNK: Configurando compilación de Android nativo...
-  - name: Configurar JDK 17
-    uses: actions/setup-java@v4
-    with:
-      distribution: 'zulu'
-      java-version: '17'
+      - name: Auto-aceptar Licencias de Android SDK
+        run: |
+          yes | sdkmanager --licenses || true
 
-  - name: Configurar Android SDK
-    uses: android-actions/setup-android@v3
+      - name: Agregar Plataforma Android
+        run: |
+          npx cap add android || npx cap sync android
 
-  # STREAMING_CHUNK: Ejecutando sincronización nativa de Capacitor...
-  - name: Sincronizar plataformas de Capacitor
-    run: |
-      node node_modules/@capacitor/cli/bin/capacitor sync
-      if [ ! -d "android" ]; then
-        node node_modules/@capacitor/cli/bin/capacitor add android
-      fi
-      node node_modules/@capacitor/cli/bin/capacitor sync android
+      - name: Sincronizar Recursos Web con Android
+        run: |
+          npx cap sync
 
-  # STREAMING_CHUNK: Compilando binarios con Gradle...
-  - name: Permisos para Gradle
-    run: chmod +x android/gradlew
+      - name: Otorgar Permisos de Ejecución Gradle
+        run: chmod +x android/gradlew
 
-  - name: Compilar APK de Android
-    run: |
-      cd android
-      ./gradlew assembleDebug
+      - name: Compilar archivo APK debuggable
+        run: |
+          cd android
+          ./gradlew assembleDebug
 
-  # STREAMING_CHUNK: Subiendo artefacto final compilado...
-  - name: Subir APK Compilado
-    uses: actions/upload-artifact@v4
-    with:
-      name: FinaPro-ModaEvelyn-Debug-APK
-      path: android/app/build/outputs/apk/debug/app-debug.apk
-      retention-days: 7
+      - name: Guardar y Exponer APK Terminado
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinaPro-Fashion-Instalador
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          
